@@ -26,13 +26,24 @@ test_loader = DataLoader(test_ds, batch_size=256)
 #    BEFORE coding, verify on paper why the Linear input is 32*7*7.
 #    (padding=1 with kernel 3 preserves size; each pool halves it)
 # ---------------------------------------------------------------
+
+lin_input = 32 * 7 * 7  # TODO: compute this from the conv/pool layers above
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
-        # TODO
+        self.mnet = nn.Sequential(
+            nn.Conv2d(1,16, kernel_size = 3, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16,32, kernel_size = 3, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Flatten(),
+            nn.Linear(lin_input, 10)
+        )
 
     def forward(self, x):
-        ...  # TODO
+        return self.mnet(x)
 
 model = CNN()
 
@@ -46,18 +57,32 @@ print("output shape:", out.shape, "-> should be (4, 10)")
 #    Same as Exercise 2 — write it again WITHOUT looking at ex2.
 #    Repetition is the goal.
 # ---------------------------------------------------------------
-criterion = ...  # TODO
-optimizer = ...  # TODO
+criterion = nn.CrossEntropyLoss()  
+
+optimizer = torch.optim.Adam(model.parameters(), lr = 1e-3 )
 
 for epoch in range(2):
     model.train()
     total_loss = 0.0
-    # TODO: training loop
+    for x,y in train_loader:
+        optimizer.zero_grad()
+        out = model(x)
+        loss = criterion(out, y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
     print(f"epoch {epoch + 1}: avg loss {total_loss / len(train_loader):.4f}")
 
 model.eval()
 correct, total = 0, 0
-# TODO: evaluation loop
+#evaluation loop
+
+with torch.no_grad():
+    for x,y in test_loader:
+        preds = model(x).argmax(dim=1)
+        correct += (preds == y).sum().item()
+        total += y.size(0)
+
 print(f"test accuracy: {correct / total:.4f}")  # want > 0.97
 
 # ---------------------------------------------------------------

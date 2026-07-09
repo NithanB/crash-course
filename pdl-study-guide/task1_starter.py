@@ -82,7 +82,7 @@ if __name__ == "__main__":
     results = {}
     M = 100
     X, Y, idx = make_dataset(f, M, mode="random")
-    for act in ["relu", "tanh", "sine"]:
+    for act in "relu":
         net = make_mlp(depth=3, width=128, act=act)
         tr = train(net, X, Y, lr=1e-4 if act == "sine" else 1e-3)
         pred, test_mse = evaluate(net, f)
